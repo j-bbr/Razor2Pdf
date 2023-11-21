@@ -19,7 +19,7 @@ namespace Sample.Pages
 
         public async Task<FileStreamResult> OnPostReportAsync()
         {
-            return await _pdfRenderer.RenderAsync(new ReportModel {Name = Name});
+            return await _pdfRenderer.RenderAsync(new ReportModel {Name = Name}, "--pdf-variant=pdf/a-4b" );
         }
     }
 }

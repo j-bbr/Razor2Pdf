@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Medallion.Shell;
 using Microsoft.AspNetCore.Hosting;
@@ -21,16 +22,16 @@ namespace NanoByte.Razor2Pdf
             _environment = environment;
         }
 
-        private static readonly RecyclableMemoryStreamManager _streamManager = new RecyclableMemoryStreamManager();
+        private static readonly RecyclableMemoryStreamManager _streamManager = new();
 
-        public async Task<FileStreamResult> RenderAsync<T>(string viewPath, T model)
+        public async Task<FileStreamResult> RenderAsync<T>(string viewPath, T model, params string[] weasyprintArgs)
         {
             string html = await _renderer.RenderAsync(viewPath, model);
             var stream = _streamManager.GetStream();
-
+            weasyprintArgs ??= Array.Empty<string>();
             var result = await
                 Command.Run("weasyprint",
-                            new[] {"--format=pdf", "-", "-"},
+                            weasyprintArgs.Append("-").Append("-"),
                             opts => opts.WorkingDirectory(_environment.WebRootPath))
                        .RedirectFrom(html)
                        .RedirectTo(stream)
@@ -41,10 +42,10 @@ namespace NanoByte.Razor2Pdf
             return new FileStreamResult(stream, contentType: "application/pdf");
         }
 
-        public Task<FileStreamResult> RenderAsync(string viewPath)
+        public Task<FileStreamResult> RenderAsync(string viewPath, params string[] weasyprintArgs)
             => RenderAsync(viewPath, new object());
 
-        public Task<FileStreamResult> RenderAsync<T>(T model) where T : IPdfModel
+        public Task<FileStreamResult> RenderAsync<T>(T model, params string[] weasyprintArgs) where T : IPdfModel
             => RenderAsync(model.ViewPath, model);
     }
 }
